@@ -1,4 +1,4 @@
-A [Prettier](https://prettier.io/) plugin and binary for Liquidsoap code
+# Liquidsoap prettier
 
 This package provides a [Prettier](https://prettier.io/) plugin for liquidsoap code
 as well as a `liquidsoap-prettier` binary for formatting liquidsoap scripts.
