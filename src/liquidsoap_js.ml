@@ -6,7 +6,7 @@ let () =
 
 let parse content =
   let content = Js.to_string content in
-  let json = Liquidsoap_tooling.Parsed_json.parse_string content in
+  let json = Parsed_json.parse_string content in
   Js._JSON##parse
     (Js.string (Liquidsoap_lang.Json.to_string ~compact:true json))
 
