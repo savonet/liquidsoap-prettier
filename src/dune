@@ -2,7 +2,7 @@
  (name liquidsoap_js)
  (optional)
  (modes js)
- (modules liquidsoap_js)
+ (modules regexp_js liquidsoap_js)
  (preprocess
   (pps js_of_ocaml-ppx))
  (libraries js_of_ocaml liquidsoap-lang liquidsoap-lang.tooling))

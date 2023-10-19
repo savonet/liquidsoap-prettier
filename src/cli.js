@@ -3,13 +3,13 @@
 import parseArgs from "minimist";
 import prettier from "prettier";
 import fs from "node:fs";
-import * as prettierPluginLiquidsoap from "../dist/liquidsoap.cjs";
+import * as prettierPluginLiquidsoap from "./index.js";
 
 const {
   _: [filename],
   write,
   w,
-} = parseArgs(process.argv.slice(2));
+} = parseArgs(process.argv.slice(2), { boolean: ["w", "write"] });
 
 if (!filename) {
   console.error("No filename passed!");
