@@ -1,16 +1,8 @@
-(env
- (release
-  (ocamlopt_flags
-   (:standard -O2)))
- (dev
-  (flags
-   (:standard -w -9))))
-
 (executable
  (name liquidsoap_js)
  (optional)
  (modes js)
- (modules parsed_json regexp_js liquidsoap_js)
+ (modules regexp_js liquidsoap_js)
  (preprocess
   (pps js_of_ocaml-ppx))
- (libraries js_of_ocaml liquidsoap-lang))
+ (libraries js_of_ocaml liquidsoap-lang liquidsoap-lang.tooling))
