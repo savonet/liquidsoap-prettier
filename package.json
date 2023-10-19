@@ -1,6 +1,6 @@
 {
   "name": "prettier-plugin-liquidsoap",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Liquidsoap language prettier plugin",
   "type": "module",
   "main": "src/index.js",
@@ -8,6 +8,8 @@
     "liquidsoap-prettier": "src/cli.js"
   },
   "scripts": {
+    "build:web": "webpack --config webpack.web.cjs",
+    "release": "dune build && npm run build:web && npm publish",
     "liquidsoap-prettier": "node ./src/cli.js"
   },
   "prettier": {
@@ -20,5 +22,9 @@
   "dependencies": {
     "minimist": "^1.2.8",
     "prettier": "^3.0.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
   }
 }
