@@ -14,18 +14,18 @@ conventions.
 It works as follows:
 
 ```shell
-$ liquidsoap-prettier [-w|--write] /path/to/file.liq
+$ liquidsoap-prettier [-w|--write] path/to/file.liq "path/with/glob/pattern/**/*.liq"
 ```
 
-### Local prettier plugin
+### Prettier plugin
 
-In general, `prettier` works better when installed locally but this requires a `package.json` at the
-root of your project.
+The package also provides a prettier plugin which can be used to add liquidsoap script parsing to
+your project. To enable, you need a local `package.json`.
 
-First, install `prettier-plugin-liquidsoap` as a dev-dependency:
+First, install the required packages:
 
 ```sh
-npm install -D prettier prettier-plugin-liquidsoap
+npm install -D prettier liquidsoap-prettier
 ```
 
 Then add the plugin to your Prettier config:
@@ -33,42 +33,6 @@ Then add the plugin to your Prettier config:
 ```json
 // .prettierrc
 {
-  "plugins": ["prettier-plugin-liquidsoap"]
+  "plugins": ["liquidsoap-prettier"]
 }
 ```
-
-### Global prettier plugin
-
-Installing the plugin globally works but currently requires a couple of workarounds. You need to install the plugin
-and the `prettier` module globally:
-
-```shell
-% npm install -g prettier prettier-plugin-liquidsoap
-```
-
-Next, you need to create a prettier configuration file in your home directory. This file must reference the absolute path
-to the plugin entrypoint:
-
-```json
-// $HOME/.prettierrc
-{
-  "plugins": ["/path/to/prettier-plugin-liquidsoap/src/index.js"],
-  "overrides": [
-    {
-      "files": "*.liq",
-      "options": {
-        "parser": "liquidsoap"
-      }
-    }
-  ]
-}
-```
-
-To find out the absolute path to the plugin entrypoint you can do:
-
-```shell
-% which prettier
-<prefix>/bin/prettier
-```
-
-The plugin should then be located at: `<prefix>/lib/node_modules/prettier-plugin-liquidsoap/src/index.js`
