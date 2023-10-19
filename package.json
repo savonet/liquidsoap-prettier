@@ -1,7 +1,7 @@
 {
-  "name": "prettier-plugin-liquidsoap",
+  "name": "liquidsoap-prettier",
   "version": "1.4.4",
-  "description": "Liquidsoap language prettier plugin",
+  "description": "Liquidsoap language prettier CLI and plugin",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -20,6 +20,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.7.2",
+    "glob": "^10.3.10",
     "minimist": "^1.2.8",
     "prettier": "^3.0.0"
   },
