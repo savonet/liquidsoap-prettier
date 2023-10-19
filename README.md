@@ -52,7 +52,7 @@ to the plugin entrypoint:
 ```json
 // $HOME/.prettierrc
 {
-  "plugins": ["/path/to/prettier-plugin-liquidsoap/dist/node.js"],
+  "plugins": ["/path/to/prettier-plugin-liquidsoap/src/index.js"],
   "overrides": [
     {
       "files": "*.liq",
@@ -71,4 +71,4 @@ To find out the absolute path to the plugin entrypoint you can do:
 <prefix>/bin/prettier
 ```
 
-The plugin should then be located at: `<prefix>/lib/node_modules/prettier-plugin-liquidsoap/dist/node.js`
+The plugin should then be located at: `<prefix>/lib/node_modules/prettier-plugin-liquidsoap/src/index.js`
