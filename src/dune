@@ -5,4 +5,7 @@
  (modules regexp_js liquidsoap_js)
  (preprocess
   (pps js_of_ocaml-ppx))
+ (js_of_ocaml
+   (flags --target-env=browser)
+   (build_runtime_flags --target-env=browser))
  (libraries js_of_ocaml liquidsoap-lang liquidsoap-lang.tooling))
