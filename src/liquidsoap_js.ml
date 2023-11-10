@@ -1,7 +1,4 @@
 open Js_of_ocaml
-open Liquidsoap_lang
-
-let () = Hooks.regexp := Regexp_js.make
 
 let parse content =
   let content = Js.to_string content in
