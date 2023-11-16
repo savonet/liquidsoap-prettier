@@ -666,10 +666,10 @@ const print = (path, options, print) => {
         return [print("left"), "-", print("right")];
       case "time":
         return [
-          ...(node.week ? ["" + node.week, "w"] : []),
-          ...(node.hours ? ["" + node.hours, "h"] : []),
-          ...(node.minutes ? ["" + node.minutes, "m"] : []),
-          ...(node.second ? ["" + node.seconds, "s"] : []),
+          ...(typeof node.week === "number" ? ["" + node.week, "w"] : []),
+          ...(typeof node.hours === "number" ? ["" + node.hours, "h"] : []),
+          ...(typeof node.minutes === "number" ? ["" + node.minutes, "m"] : []),
+          ...(typeof node.second === "number" ? ["" + node.seconds, "s"] : []),
         ];
       case "encoder":
         return [
