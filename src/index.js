@@ -704,18 +704,29 @@ const print = (path, options, print) => {
         return group([
           "try",
           indent(group([line, print("body")], { shouldBreak: true })),
-          line,
-          group([
-            "catch",
-            line,
-            node.variable,
-            ...(node.errors_list
-              ? [group([line, ":", line, print("errors_list")])]
-              : []),
-            line,
-            "do",
-          ]),
-          indent(group([line, print("handler")], { shouldBreak: true })),
+          ...(node.handler
+            ? [
+                line,
+                group([
+                  "catch",
+                  line,
+                  node.variable,
+                  ...(node.errors_list
+                    ? [group([line, ":", line, print("errors_list")])]
+                    : []),
+                  line,
+                  "do",
+                ]),
+                indent(group([line, print("handler")], { shouldBreak: true })),
+              ]
+            : []),
+          ...(node.finally
+            ? [
+                line,
+                group(["finally", line]),
+                indent(group([line, print("finally")], { shouldBreak: true })),
+              ]
+            : []),
           line,
           "end",
         ]);

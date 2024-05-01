@@ -1,3 +1,8 @@
+(env
+ (dev
+  (flags
+   (:standard -w -7-9-31 -warn-error -33))))
+
 (executable
  (name liquidsoap_js)
  (optional)
@@ -8,4 +13,4 @@
  (js_of_ocaml
    (flags --target-env=browser)
    (build_runtime_flags --target-env=browser))
- (libraries js_of_ocaml liquidsoap-lang liquidsoap-lang.tooling))
+ (libraries js_of_ocaml liquidsoap-js liquidsoap-lang liquidsoap-lang.tooling))
