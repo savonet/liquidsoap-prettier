@@ -17,6 +17,13 @@ It works as follows:
 $ liquidsoap-prettier [-w|--write] path/to/file.liq "path/with/glob/pattern/**/*.liq"
 ```
 
+You can also simply check the script without formatting it:
+```shell
+$ liquidsoap-prettier [-|--check] path/to/file.liq "path/with/glob/pattern/**/*.liq"
+```
+
+The program returns with exit code `0` when the script is already pretty-printed and `2` otherwise.
+
 ### Prettier plugin
 
 The package also provides a prettier plugin which can be used to add liquidsoap script parsing to
