@@ -48,3 +48,7 @@ it using the `dev:prepare` npm script. For instance:
 ```shell
 npm run dev:prepare
 ```
+
+If you are working on some changes on the liquidsoap language and want to update the parser file, you need
+to install a pinned version of your changes from the liquidsoap code repository using `opam` and then run
+`dune build` inside this repository. This should rebuild the parser file using your latest changes.
