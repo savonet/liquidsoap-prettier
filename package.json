@@ -10,6 +10,7 @@
   "scripts": {
     "build:web": "webpack --config webpack.web.cjs",
     "release": "dune build && npm run build:web && npm publish",
+    "dev:prepare": "node ./scripts/download-parser.js",
     "liquidsoap-prettier": "node ./src/cli.js"
   },
   "prettier": {
@@ -23,9 +24,13 @@
     "bluebird": "^3.7.2",
     "glob": "^10.3.10",
     "minimist": "^1.2.8",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "tmp": "^0.2.3"
   },
   "devDependencies": {
+    "gunzip-maybe": "^1.4.2",
+    "nodejs-file-downloader": "^4.13.0",
+    "tar-fs": "^3.0.6",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
   }

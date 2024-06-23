@@ -36,3 +36,15 @@ Then add the plugin to your Prettier config:
   "plugins": ["liquidsoap-prettier"]
 }
 ```
+
+## Developer doc
+
+The code is built using the `prettier` API and a JSON parser exported via `js_of_ocaml` from
+the liquidsoap code.
+
+The JSON parser builtin from liquidsoap code is not commited to this repository. You can download
+it using the `dev:prepare` npm script. For instance:
+
+```shell
+npm run dev:prepare
+```
