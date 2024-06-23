@@ -19,7 +19,7 @@ $ liquidsoap-prettier [-w|--write] path/to/file.liq "path/with/glob/pattern/**/*
 
 You can also simply check the script without formatting it:
 ```shell
-$ liquidsoap-prettier [-|--check] path/to/file.liq "path/with/glob/pattern/**/*.liq"
+$ liquidsoap-prettier [-c|--check] path/to/file.liq "path/with/glob/pattern/**/*.liq"
 ```
 
 The program returns with exit code `0` when the script is already pretty-printed and `2` otherwise.
