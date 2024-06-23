@@ -13,7 +13,11 @@ const run = async () => {
       _: [filename],
       write,
       w,
-    } = parseArgs(process.argv.slice(2), { boolean: ["w", "write"] });
+      check,
+      c,
+    } = parseArgs(process.argv.slice(2), {
+      boolean: ["w", "write", "c", "check"],
+    });
 
     if (!filename) {
       console.error("No filename passed!");
@@ -24,7 +28,7 @@ const run = async () => {
 
     if (files.length > 1 && !w && !write) {
       console.error(
-        "-w or --write must be used when formatting more than one file at a time!",
+        "-w|--write must be used when formatting more than one file at a time!",
       );
       process.exit(1);
     }
@@ -45,16 +49,24 @@ const run = async () => {
       const code = "" + fs.readFileSync(file);
 
       try {
-        const formattedCode = await prettier.format(code, {
-          parser: "liquidsoap",
-          plugins: [prettierPluginLiquidsoap],
-        });
-
-        if (write || w) {
-          console.log(`Writting formatted ${file}`);
-          fs.writeFileSync(file, formattedCode);
+        if (check || c) {
+          const isFormatted = await prettier.check(code, {
+            parser: "liquidsoap",
+            plugins: [prettierPluginLiquidsoap],
+          });
+          exitCode = isFormatted ? 0 : 2;
         } else {
-          process.stdout.write(formattedCode);
+          const formattedCode = await prettier.format(code, {
+            parser: "liquidsoap",
+            plugins: [prettierPluginLiquidsoap],
+          });
+
+          if (write || w) {
+            console.log(`Writting formatted ${file}`);
+            fs.writeFileSync(file, formattedCode);
+          } else {
+            process.stdout.write(formattedCode);
+          }
         }
       } catch (err) {
         console.error(`Error while processing file ${file}: ${err}`);
