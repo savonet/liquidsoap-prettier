@@ -241,7 +241,7 @@ const print = (path, options, print) => {
       case "tuple":
         return group([
           "(",
-          indent(group([softline, join(["*"], path.map(print, "value"))])),
+          indent(group([softline, join([line, "*", line], path.map(print, "value"))])),
           softline,
           ")",
         ]);
@@ -249,7 +249,7 @@ const print = (path, options, print) => {
         return [
           group([
             "(",
-            indent([softline, joinWithComments([","], "args")]),
+            indent([softline, joinWithComments([",", line], "args")]),
             softline,
             ")",
           ]),
