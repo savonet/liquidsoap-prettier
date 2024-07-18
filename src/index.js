@@ -216,6 +216,8 @@ const print = (path, options, print) => {
         return node.value;
       case "nullable":
         return [print("value"), "?"];
+      case "typeof":
+        return group(["typeof", " ", print("value")]);
       case "fun_arg":
         return [
           ...(node.label ? ["~", node.label] : []),
