@@ -193,12 +193,9 @@ const print = (path, options, print) => {
       ? printOptTyp(node.as_variable)
       : [
           "~",
-          ...printOptTyp(
-            group([
-              node.label,
-              ...(node.as_variable ? ["=", node.as_variable] : []),
-            ]),
-          ),
+          ...(node.as_variable
+            ? [node.label, ":", printOptTyp(node.as_variable)]
+            : printOptTyp(node.label)),
         ];
 
   const printFunArg = () =>
@@ -241,7 +238,12 @@ const print = (path, options, print) => {
       case "tuple":
         return group([
           "(",
-          indent(group([softline, join([line, "*", line], path.map(print, "value"))])),
+          indent(
+            group([
+              softline,
+              join([line, "*", line], path.map(print, "value")),
+            ]),
+          ),
           softline,
           ")",
         ]);
