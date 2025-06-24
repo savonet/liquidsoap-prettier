@@ -396,7 +396,7 @@ const print = (path, options, print) => {
       case "not":
         return group(["not", " ", print("value")]);
       case "var":
-        return node.value;
+        return node.value === "_null" ? "null" : node.value;
       case "string":
         return printString(node.value);
       case "ground":

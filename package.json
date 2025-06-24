@@ -1,6 +1,6 @@
 {
   "name": "liquidsoap-prettier",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "description": "Liquidsoap language prettier CLI and plugin",
   "type": "module",
   "main": "src/index.js",
