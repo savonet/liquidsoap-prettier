@@ -325,7 +325,7 @@ const print = (path, options, print) => {
       case "source":
         return [node.base, print("value")];
       default:
-        throw `Uknown node: ${JSON.stringify(node, null, 2)}`;
+        throw `Unknown node: ${JSON.stringify(node, null, 2)}`;
     }
   };
 
@@ -734,8 +734,10 @@ const print = (path, options, print) => {
           line,
           "end",
         ]);
+      case "null":
+        return "null";
       default:
-        throw `Uknown node: ${JSON.stringify(node, null, 2)}`;
+        throw `Unknown node: ${JSON.stringify(node, null, 2)}`;
     }
   };
 
