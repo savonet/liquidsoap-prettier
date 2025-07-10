@@ -673,7 +673,7 @@ const print = (path, options, print) => {
           ...(typeof node.week === "number" ? ["" + node.week, "w"] : []),
           ...(typeof node.hours === "number" ? ["" + node.hours, "h"] : []),
           ...(typeof node.minutes === "number" ? ["" + node.minutes, "m"] : []),
-          ...(typeof node.second === "number" ? ["" + node.seconds, "s"] : []),
+          ...(typeof node.seconds === "number" ? ["" + node.seconds, "s"] : []),
         ];
       case "encoder":
         return [
