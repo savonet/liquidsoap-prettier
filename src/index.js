@@ -182,20 +182,20 @@ const print = (path, options, print) => {
     )[1];
   };
 
-  const printOptTyp = (arg) => [
+  const printOptTyp = (name) => [
     ...(node.typ ? ["(", softline] : []),
-    arg,
+    name === "label" ? node.label : print(name),
     ...(node.typ ? [":", softline, print("typ"), softline, ")"] : []),
   ];
 
   const printLabel = () =>
     node.label === ""
-      ? printOptTyp(node.as_variable)
+      ? printOptTyp("as_variable")
       : [
           "~",
           ...(node.as_variable
-            ? [node.label, ":", printOptTyp(node.as_variable)]
-            : printOptTyp(node.label)),
+            ? [node.label, ":", printOptTyp("as_variable")]
+            : printOptTyp("label")),
         ];
 
   const printFunArg = () =>
