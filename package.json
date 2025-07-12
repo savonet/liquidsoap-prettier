@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "gunzip-maybe": "^1.4.2",
+    "node-polyfill-webpack-plugin": "^4.1.0",
     "nodejs-file-downloader": "^4.13.0",
     "tar-fs": "^3.0.6",
     "webpack": "^5.89.0",
