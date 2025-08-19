@@ -45,7 +45,7 @@ const printString = (str) => {
       .replace(/\\\n\s*/g, "")
       .split(/(\s)/)
       .map((s) =>
-        s === " " ? line : s,
+        s === " " ? ifBreak([" ", "\\", hardline, " "], " ") : s,
       ),
   );
 };
