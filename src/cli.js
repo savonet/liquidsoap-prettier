@@ -15,8 +15,10 @@ const run = async () => {
       w,
       check,
       c,
+      "print-width": printWidth = 80,
     } = parseArgs(process.argv.slice(2), {
       boolean: ["w", "write", "c", "check"],
+      number: ["print-width"],
     });
 
     if (!filename) {
@@ -53,12 +55,14 @@ const run = async () => {
           const isFormatted = await prettier.check(code, {
             parser: "liquidsoap",
             plugins: [prettierPluginLiquidsoap],
+            printWidth,
           });
           exitCode = isFormatted ? 0 : 2;
         } else {
           const formattedCode = await prettier.format(code, {
             parser: "liquidsoap",
             plugins: [prettierPluginLiquidsoap],
+            printWidth,
           });
 
           if (write || w) {
