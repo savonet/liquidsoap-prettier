@@ -44,9 +44,7 @@ const printString = (str) => {
     str
       .replace(/\\\n\s*/g, "")
       .split(/(\s)/)
-      .map((s) =>
-        s === " " ? ifBreak([" ", "\\", hardline, " "], " ") : s,
-      ),
+      .map((s) => (s === " " ? ifBreak([" ", "\\", hardline, " "], " ") : s)),
   );
 };
 
@@ -202,8 +200,7 @@ const print = (path, options, print) => {
     group([...printLabel(), ...(node.default ? ["=", print("default")] : [])]);
 
   const printAppArg = () => {
-    if (node.label)
-      return group([node.label, "=", print("value")]);
+    if (node.label) return group([node.label, "=", print("value")]);
     return print("value");
   };
 
@@ -334,13 +331,9 @@ const print = (path, options, print) => {
       case "while":
         return group([
           "while",
-          line,
-          print("condition"),
-          line,
+          group([indent([line, print("condition")]), line]),
           "do",
-          line,
-          print("loop"),
-          line,
+          group([indent([line, print("loop")]), line]),
           "end",
         ]);
       case "for":
@@ -521,25 +514,20 @@ const print = (path, options, print) => {
         if (node.args.length === 0) {
           return group([print("op"), "(", ")"]);
         }
-        
+
         // Print all arguments
         const printedArgs = path.map(print, "args");
-        
+
         // Try to format on a single line first
         const singleLine = join(", ", printedArgs);
-        
+
         // Format with line breaks
         const multiLine = [
           indent([line, join([",", line], printedArgs)]),
           line,
         ];
-        
-        return group([
-          print("op"),
-          "(",
-          ifBreak(multiLine, singleLine),
-          ")",
-        ]);
+
+        return group([print("op"), "(", ifBreak(multiLine, singleLine), ")"]);
       case "eof":
         return "";
       case "seq":
