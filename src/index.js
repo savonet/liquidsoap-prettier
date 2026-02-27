@@ -220,6 +220,8 @@ const print = (path, options, print) => {
         ];
       case "list":
         return group(["[", indent([softline, print("value")]), softline, "]"]);
+      case "ref":
+        return group(["ref", "(", print("value"), ")"]);
       case "json_object":
         return [
           "[",
