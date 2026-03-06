@@ -394,6 +394,8 @@ const print = (path, options, print) => {
         return node.value === "_null" ? "null" : node.value;
       case "string":
         return printString(node.value);
+      case "raw_string":
+        return `{${node.id}|${node.value}|${node.id}}`;
       case "ground":
         return node.value;
       case "term":
