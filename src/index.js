@@ -3,20 +3,7 @@ import * as liquidsoap from "../dist/liquidsoap.cjs";
 import { remapOffsets } from "./remap_offsets.js";
 
 const {
-  builders: {
-    group,
-    trim,
-    indent,
-    dedent,
-    join,
-    hardline,
-    line,
-    litteralline,
-    softline,
-    ifBreak,
-    lineSuffix,
-    fill,
-  },
+  builders: { group, trim, indent, join, hardline, line, softline, ifBreak, fill },
 } = prettierDoc;
 
 export const languages = [
@@ -43,6 +30,27 @@ export const parsers = {
   },
 };
 
+const printStmts = (stmts, printed) => {
+  if (!stmts || stmts.length === 0) return "";
+  const result = [];
+  for (let i = 0; i < printed.length; i++) {
+    if (i > 0) {
+      result.push(hardline);
+      const prev = stmts[i - 1];
+      const cur = stmts[i];
+      if (
+        prev.position?.[1]?.lnum &&
+        cur.position?.[0]?.lnum &&
+        cur.position[0].lnum - prev.position[1].lnum > 1
+      ) {
+        result.push(hardline);
+      }
+    }
+    result.push(printed[i]);
+  }
+  return result;
+};
+
 const printString = (str) => {
   if (/(?<!\\)\n/.test(str)) return str;
   if (!/\s/.test(str)) return str;
@@ -57,27 +65,6 @@ const printString = (str) => {
 
 const print = (path, options, print) => {
   const node = path.getValue();
-
-  const printStmts = (stmts, printed) => {
-    if (!stmts || stmts.length === 0) return "";
-    const result = [];
-    for (let i = 0; i < printed.length; i++) {
-      if (i > 0) {
-        result.push(hardline);
-        const prev = stmts[i - 1];
-        const cur = stmts[i];
-        if (
-          prev.position?.[1]?.lnum &&
-          cur.position?.[0]?.lnum &&
-          cur.position[0].lnum - prev.position[1].lnum > 1
-        ) {
-          result.push(hardline);
-        }
-      }
-      result.push(printed[i]);
-    }
-    return result;
-  };
 
   const printStatements = (field) =>
     printStmts(node[field], path.map(print, field));
@@ -304,12 +291,11 @@ const print = (path, options, print) => {
       case "iterable_for_header":
         return group([
           "for",
-          line,
+          " ",
           node.variable,
-          line,
+          " ",
           "=",
-          line,
-          print("iterator"),
+          indent([line, print("iterator")]),
           line,
         ]);
       case "iterable_for_body":
@@ -463,24 +449,19 @@ const print = (path, options, print) => {
         return printFunArg();
       case "app_arg":
         return printAppArg();
-      case "app":
+      case "app": {
         if (node.args.length === 0) {
           return group([print("op"), "(", ")"]);
         }
-
-        // Print all arguments
         const printedArgs = path.map(print, "args");
-
-        // Try to format on a single line first
-        const singleLine = join(", ", printedArgs);
-
-        // Format with line breaks
-        const multiLine = [
-          indent([line, join([",", line], printedArgs)]),
-          line,
-        ];
-
-        return group([print("op"), "(", ifBreak(multiLine, singleLine), ")"]);
+        return group([
+          print("op"),
+          "(",
+          indent([softline, join([",", line], printedArgs)]),
+          softline,
+          ")",
+        ]);
+      }
       case "eof":
         return "";
       case "seq":
@@ -572,11 +553,7 @@ const print = (path, options, print) => {
       case "inline_if":
         return group([
           print("condition"),
-          line,
-          "?",
-          group([indent([line, print("then")]), line]),
-          ":",
-          group([indent([line, print("else")]), line]),
+          indent([line, "? ", print("then"), line, ": ", print("else")]),
         ]);
       case "infix":
         return group([
@@ -586,26 +563,15 @@ const print = (path, options, print) => {
           indent([line, print("right")]),
         ]);
       case "bool":
-        return group(
-          join(
-            [dedent(line), node.op, line],
-            path.map(
-              (v) => group([indent([softline, print(v)]), softline]),
-              "value",
-            ),
-          ),
-        );
+        return group(join([line, node.op, " "], path.map(print, "value")));
       case "string_interpolation":
-        return group(path.map(print, "value"));
+        return path.map(print, "value");
       case "interpolated_string":
         return printString(node.value);
       case "interpolated_term":
         return group(["#{", indent([softline, print("value")]), softline, "}"]);
       case "coalesce":
-        return group([
-          print("left"),
-          indent([line, "??", indent([line, print("right")])]),
-        ]);
+        return group([print("left"), indent([line, "?? ", print("right")])]);
       case "assoc":
         return group([
           print("left"),
@@ -657,7 +623,7 @@ const print = (path, options, print) => {
           ]),
         ];
       case "method":
-        return group([node.name, "=", indent([softline, print("value")])]);
+        return group([node.name, " ", "=", indent([line, print("value")])]);
       case "try":
         return group([...path.map(print, "parts"), line, "end"]);
       case "try_body":
@@ -747,6 +713,7 @@ export const printers = {
       if (["if_def", "if_version", "if_encoder"].includes(node.type))
         return [node.then_block, ...(node.else_block ? [node.else_block] : [])];
       if (node.type === "ifdef_block") return node.body;
+      if (node.type === "app") return [node.op, ...node.args];
       return null;
     },
   },
