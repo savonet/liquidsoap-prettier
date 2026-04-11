@@ -713,6 +713,7 @@ export const printers = {
       if (["if_def", "if_version", "if_encoder"].includes(node.type))
         return [node.then_block, ...(node.else_block ? [node.else_block] : [])];
       if (node.type === "ifdef_block") return node.body;
+      if (node.type === "app") return [node.op, ...node.args];
       return null;
     },
   },
