@@ -1,21 +1,9 @@
 import prettierDoc from "prettier/doc";
 import * as liquidsoap from "../dist/liquidsoap.cjs";
+import { remapOffsets } from "./remap_offsets.js";
 
 const {
-  builders: {
-    group,
-    trim,
-    indent,
-    dedent,
-    join,
-    hardline,
-    line,
-    litteralline,
-    softline,
-    ifBreak,
-    lineSuffix,
-    fill,
-  },
+  builders: { group, trim, indent, join, hardline, line, softline, ifBreak, fill },
 } = prettierDoc;
 
 export const languages = [
@@ -27,13 +15,40 @@ export const languages = [
   },
 ];
 
+
 export const parsers = {
   liquidsoap: {
-    parse: liquidsoap.default.lang.parse,
+    parse: (text) => {
+      const result = liquidsoap.default.lang.parse(text);
+      remapOffsets(result, text);
+      result.ast.comments = result.comments;
+      return result.ast;
+    },
     astFormat: "liquidsoap",
-    locStart: () => 0,
-    locEnd: () => 0,
+    locStart: (node) => node.position?.[0]?.cnum ?? node.start ?? 0,
+    locEnd: (node) => node.position?.[1]?.cnum ?? node.end ?? 0,
   },
+};
+
+const printStmts = (stmts, printed) => {
+  if (!stmts || stmts.length === 0) return "";
+  const result = [];
+  for (let i = 0; i < printed.length; i++) {
+    if (i > 0) {
+      result.push(hardline);
+      const prev = stmts[i - 1];
+      const cur = stmts[i];
+      if (
+        prev.position?.[1]?.lnum &&
+        cur.position?.[0]?.lnum &&
+        cur.position[0].lnum - prev.position[1].lnum > 1
+      ) {
+        result.push(hardline);
+      }
+    }
+    result.push(printed[i]);
+  }
+  return result;
 };
 
 const printString = (str) => {
@@ -51,11 +66,17 @@ const printString = (str) => {
 const print = (path, options, print) => {
   const node = path.getValue();
 
+  const printStatements = (field) =>
+    printStmts(node[field], path.map(print, field));
+
   const printIfDef = (...ifdef) => [
     group([trim, ...ifdef, hardline]),
-    group([print("then")]),
-    ...(node.else
-      ? [group([hardline, trim, "%else", hardline]), group([print("else")])]
+    group([path.call(print, "then_block")]),
+    ...(node.else_block
+      ? [
+          group([hardline, trim, "%else", hardline]),
+          group([path.call(print, "else_block")]),
+        ]
       : []),
     group([hardline, trim, "%endif"]),
   ];
@@ -72,113 +93,19 @@ const print = (path, options, print) => {
     ]);
   };
 
-  const newLine = (pos1, pos2) => {
-    const posBefore = pos1?.[1]?.lnum;
-    const posAfter = pos2?.[0]?.lnum;
-    return posBefore && posAfter && posAfter - posBefore > 1 ? [hardline] : [];
-  };
-
   const printEllipsis = (p) => {
-    node.ast_comments = node.value.ast_comments;
-    node.position = node.value.position;
-    delete node.value.ast_comments;
     return group(["...", print(p)]);
   };
 
-  const printComments = (node, content) => {
-    if (!node.ast_comments) return [node.position, content];
-
-    const beforeComments = node.ast_comments.before;
-    const afterComments = node.ast_comments.after;
-
-    delete node.ast_comments;
-
-    const [contentWithBeforeComments, beforePosition] = beforeComments
-      .reverse()
-      .reduce(
-        ([content, position], comment) => [
-          [
-            join(hardline, comment.value),
-            hardline,
-            ...(position === node.position
-              ? newLine(comment.position, position)
-              : [hardline]),
-            ...content,
-          ],
-          comment.position,
-        ],
-        [[content], node.position],
-      );
-
-    const [contentWithAfterComments, afterPosition] = afterComments.reduce(
-      ([content, position], comment) => [
-        [
-          ...content,
-          ...(position === node.position
-            ? [hardline, ...newLine(position, comment.position)]
-            : [hardline, hardline]),
-          lineSuffix(join(hardline, comment.value)),
-        ],
-        comment.position,
-      ],
-      [contentWithBeforeComments, node.position],
-    );
-
-    return [[beforePosition[0], afterPosition[1]], contentWithAfterComments];
-  };
-
   const printSeq = (pos1, content1, pos2, content2) => {
-    return [content1, hardline, ...newLine(pos1, pos2), content2];
+    const posBefore = pos1?.[1]?.lnum;
+    const posAfter = pos2?.[0]?.lnum;
+    const blank =
+      posBefore && posAfter && posAfter - posBefore > 1 ? [hardline] : [];
+    return [content1, hardline, ...blank, content2];
   };
 
-  const printDef = (pos1, node1) =>
-    node.body.type === "eof"
-      ? node1
-      : printSeq(pos1, node1, node.body.position, print("body"));
-
-  const joinWithComments = (join, p) => {
-    const nodes = node[p].map((node) => {
-      if (node.type === "term") {
-        node.ast_comments = node.value.ast_comments;
-        node.position = node.value.position;
-        delete node.value.ast_comments;
-      }
-
-      const { ast_comments, position } = node;
-
-      delete node.ast_comments;
-
-      return { ast_comments, position };
-    });
-
-    const content = path.map(print, p);
-
-    return content.reduce(
-      ([position, result], c, idx) => {
-        const isLast = idx === content.length - 1;
-        const joinedContent = isLast ? c : [c, join];
-
-        if (!nodes[idx].position)
-          return [position, [result, joinedContent, ...(isLast ? [] : [line])]];
-
-        const [nextPosition, contentWithComments] = printComments(
-          nodes[idx],
-          joinedContent,
-        );
-
-        return [
-          [position[0], nextPosition[1]],
-          [
-            ...result,
-            ...newLine(position, nextPosition),
-            contentWithComments,
-            ...(isLast ? [] : [line]),
-          ],
-        ];
-      },
-      [node.position, []],
-    )[1];
-  };
+  const joinArgs = (p) => join([",", line], path.map(print, p));
 
   const printOptTyp = (name) => [
     ...(node.typ ? ["(", softline] : []),
@@ -252,7 +179,7 @@ const print = (path, options, print) => {
         return [
           group([
             "(",
-            indent([softline, joinWithComments([",", line], "args")]),
+            indent([softline, joinArgs("args")]),
             softline,
             ")",
           ]),
@@ -274,7 +201,7 @@ const print = (path, options, print) => {
         return group([
           "{",
           group([
-            indent([softline, joinWithComments([","], "value")]),
+            indent([softline, joinArgs("value")]),
             softline,
           ]),
           "}",
@@ -284,7 +211,7 @@ const print = (path, options, print) => {
           print("base"),
           ".",
           "{",
-          group([indent([line, joinWithComments([","], "value")]), line]),
+          group([indent([line, joinArgs("value")]), line]),
           "}",
         ];
       case "invoke":
@@ -317,7 +244,7 @@ const print = (path, options, print) => {
             : [
                 group([
                   "(",
-                  indent([softline, joinWithComments([","], "params")]),
+                  indent([softline, joinArgs("params")]),
                   softline,
                   ")",
                 ]),
@@ -332,15 +259,21 @@ const print = (path, options, print) => {
 
   const printValue = () => {
     switch (node.type) {
-      case "while":
-        return group([
-          "while",
-          group([indent([line, print("condition")]), line]),
-          "do",
-          group([indent([line, print("loop")]), line]),
-          "end",
-        ]);
-      case "for":
+      case "program":
+        return printStatements("body");
+      case "while": {
+        const [whileHeader, whileBody] = path.map(print, "parts");
+        return group([whileHeader, whileBody, line, "end"]);
+      }
+      case "while_header":
+        return ["while", group([indent([line, print("condition")]), line])];
+      case "while_body":
+        return ["do", group([indent([line, printStatements("body")]), line])];
+      case "for": {
+        const [forHeader, forBody] = path.map(print, "parts");
+        return group([forHeader, forBody, line, "end"]);
+      }
+      case "for_header":
         return group([
           "for",
           " ",
@@ -348,29 +281,27 @@ const print = (path, options, print) => {
           "to",
           indent([line, print("to")]),
           line,
-          "do",
-          indent([line, print("loop")]),
-          line,
-          "end",
         ]);
-      case "iterable_for":
+      case "for_body":
+        return ["do", indent([line, printStatements("body")]), line];
+      case "iterable_for": {
+        const [iterHeader, iterBody] = path.map(print, "parts");
+        return group([iterHeader, iterBody, line, "end"]);
+      }
+      case "iterable_for_header":
         return group([
           "for",
-          line,
+          " ",
           node.variable,
-          line,
+          " ",
           "=",
+          indent([line, print("iterator")]),
           line,
-          print("iterator"),
-          line,
-          "do",
-          print("do"),
-          indent([line, print("loop")]),
-          line,
-          "end",
         ]);
+      case "iterable_for_body":
+        return ["do", indent([line, printStatements("body")]), line];
       case "open":
-        return ["open", " ", print("left"), hardline, print("right")];
+        return ["open", " ", print("left")];
       case "if_def":
         return printIfDef(
           node.negative ? "%ifndef" : "%ifdef",
@@ -386,6 +317,8 @@ const print = (path, options, print) => {
         );
       case "if_version":
         return printIfDef("%ifversion", " ", node.opt, " ", node.version);
+      case "ifdef_block":
+        return printStmts(node.body, path.map(print, "body"));
       case "negative":
         return group(["-", print("value")]);
       case "append":
@@ -434,7 +367,7 @@ const print = (path, options, print) => {
         return group([
           "(",
           group([
-            indent([softline, joinWithComments([","], "value")]),
+            indent([softline, joinArgs("value")]),
             softline,
           ]),
           ")",
@@ -442,14 +375,14 @@ const print = (path, options, print) => {
       case "list":
         return group([
           "[",
-          indent(group([softline, joinWithComments([","], "value")])),
+          indent(group([softline, joinArgs("value")])),
           softline,
           "]",
         ]);
       case "pmeth":
         return group([
           "{",
-          indent([softline, joinWithComments([","], "value")]),
+          indent([softline, joinArgs("value")]),
           softline,
           "}",
         ]);
@@ -489,7 +422,7 @@ const print = (path, options, print) => {
       case "parenthesis":
         return group(["(", indent([softline, print("value")]), softline, ")"]);
       case "block":
-        return group(["begin", indent([line, print("value")]), line, "end"]);
+        return group(["begin", indent([line, printStatements("body")]), line, "end"]);
       case "cast":
         return group([
           "(",
@@ -504,36 +437,31 @@ const print = (path, options, print) => {
           " ",
           group([
             "(",
-            indent([softline, joinWithComments([","], "arguments")]),
+            indent([softline, joinArgs("arguments")]),
             softline,
             ")",
             " ",
             "->",
           ]),
-          indent([line, print("body")]),
+          indent([line, printStatements("body")]),
         ]);
       case "fun_arg":
         return printFunArg();
       case "app_arg":
         return printAppArg();
-      case "app":
+      case "app": {
         if (node.args.length === 0) {
           return group([print("op"), "(", ")"]);
         }
-
-        // Print all arguments
         const printedArgs = path.map(print, "args");
-
-        // Try to format on a single line first
-        const singleLine = join(", ", printedArgs);
-
-        // Format with line breaks
-        const multiLine = [
-          indent([line, join([",", line], printedArgs)]),
-          line,
-        ];
-
-        return group([print("op"), "(", ifBreak(multiLine, singleLine), ")"]);
+        return group([
+          print("op"),
+          "(",
+          indent([softline, join([",", line], printedArgs)]),
+          softline,
+          ")",
+        ]);
+      }
       case "eof":
         return "";
       case "seq":
@@ -545,89 +473,87 @@ const print = (path, options, print) => {
           print("right"),
         );
       case "def":
-        return printDef(
-          ...printComments(
-            node,
-            group([
-              "def",
-              " ",
-              ...(node.decoration ? [print("decoration"), " "] : []),
-              printPat(),
-              ...(node.arglist
-                ? [
-                    "(",
-                    group([
-                      indent([softline, joinWithComments([","], "arglist")]),
-                      softline,
-                    ]),
-                    ")",
-                  ]
-                : []),
-              " ",
-              "=",
-              group([indent([hardline, print("definition")]), hardline, "end"]),
-            ]),
-          ),
-        );
-      case "let":
-        return printDef(
-          ...printComments(
-            node,
-            group([
-              "let",
-              " ",
-              ...(node.decoration ? [print("decoration"), " "] : []),
-              printPat(),
-              " ",
-              "=",
-              group([indent([line, print("definition")])]),
-            ]),
-          ),
-        );
-      case "binding":
-        return printDef(
-          ...printComments(
-            node,
-            group([
-              printPat(),
-              " ",
-              "=",
-              group([indent([line, print("definition")])]),
-            ]),
-          ),
-        );
-      case "simple_fun":
-        return group(["{", indent([softline, print("value")]), softline, "}"]);
-      case "if":
         return group([
-          "if",
-          indent([line, group(print("condition"))]),
-          line,
-          "then",
-          indent([line, print("then")]),
-          ...(node.elsif.length !== 0
-            ? [line, join(line, path.map(print, "elsif"))]
+          "def",
+          " ",
+          ...(node.decoration ? [print("decoration"), " "] : []),
+          printPat(),
+          ...(node.arglist
+            ? [
+                "(",
+                group([
+                  indent([softline, joinArgs("arglist")]),
+                  softline,
+                ]),
+                ")",
+              ]
             : []),
-          ...(node.else ? [line, "else", indent([line, print("else")])] : []),
-          line,
-          "end",
+          " ",
+          "=",
+          group([
+            indent([hardline, printStatements("body")]),
+            hardline,
+            "end",
+          ]),
         ]);
-      case "elsif":
+      case "let":
         return group([
+          "let",
+          " ",
+          ...(node.decoration ? [print("decoration"), " "] : []),
+          printPat(),
+          " ",
+          "=",
+          group([indent([line, print("definition")])]),
+        ]);
+      case "binding":
+        return group([
+          printPat(),
+          " ",
+          "=",
+          group([indent([line, print("definition")])]),
+        ]);
+      case "simple_fun":
+        return group(["{", indent([softline, printStatements("body")]), softline, "}"]);
+      case "if": {
+        const parts = [
+          "if",
+          indent([line, print("condition")]),
+          line,
+          path.call(print, "then_block"),
+        ];
+        for (let i = 0; i < node.elsif.length; i++) {
+          parts.push(line, path.call(print, "elsif", i));
+        }
+        if (node.else_block) {
+          parts.push(line, path.call(print, "else_block"));
+        }
+        parts.push(line, "end");
+        return group(parts);
+      }
+      case "then_block":
+        return [
+          "then",
+          indent([line, printStmts(node.body, path.map(print, "body"))]),
+        ];
+      case "else_block":
+        return [
+          "else",
+          indent([line, printStmts(node.body, path.map(print, "body"))]),
+        ];
+      case "elsif": {
+        return [
           "elsif",
           indent([line, print("condition")]),
           line,
           "then",
-          indent([line, print("then")]),
-        ]);
+          indent([line, printStmts(node.body, path.map(print, "body"))]),
+        ];
+      }
       case "inline_if":
         return group([
           print("condition"),
-          line,
-          "?",
-          group([indent([line, print("then")]), line]),
-          ":",
-          group([indent([line, print("else")]), line]),
+          indent([line, "? ", print("then"), line, ": ", print("else")]),
         ]);
       case "infix":
         return group([
@@ -637,26 +563,15 @@ const print = (path, options, print) => {
           indent([line, print("right")]),
         ]);
       case "bool":
-        return group(
-          join(
-            [dedent(line), node.op, line],
-            path.map(
-              (v) => group([indent([softline, print(v)]), softline]),
-              "value",
-            ),
-          ),
-        );
+        return group(join([line, node.op, " "], path.map(print, "value")));
       case "string_interpolation":
-        return group(path.map(print, "value"));
+        return path.map(print, "value");
       case "interpolated_string":
         return printString(node.value);
       case "interpolated_term":
         return group(["#{", indent([softline, print("value")]), softline, "}"]);
       case "coalesce":
-        return group([
-          print("left"),
-          indent([line, "??", indent([line, print("right")])]),
-        ]);
+        return group([print("left"), indent([line, "?? ", print("right")])]);
       case "assoc":
         return group([
           print("left"),
@@ -689,7 +604,7 @@ const print = (path, options, print) => {
             : [
                 group([
                   "(",
-                  indent([softline, joinWithComments([","], "params")]),
+                  indent([softline, joinArgs("params")]),
                   softline,
                   ")",
                 ]),
@@ -702,43 +617,48 @@ const print = (path, options, print) => {
           ...(node.base ? [print("base"), "."] : []),
           group([
             "{",
-            indent([softline, joinWithComments([","], "methods")]),
+            indent([softline, joinArgs("methods")]),
             softline,
             "}",
           ]),
         ];
       case "method":
-        return group([node.name, "=", indent([softline, print("value")])]);
+        return group([node.name, " ", "=", indent([line, print("value")])]);
       case "try":
-        return group([
+        return group([...path.map(print, "parts"), line, "end"]);
+      case "try_body":
+        return [
           "try",
-          indent(group([line, print("body")], { shouldBreak: true })),
-          ...(node.handler
-            ? [
-                line,
-                group([
-                  "catch",
-                  line,
-                  node.variable,
-                  ...(node.errors_list
-                    ? [group([line, ":", line, print("errors_list")])]
-                    : []),
-                  line,
-                  "do",
-                ]),
-                indent(group([line, print("handler")], { shouldBreak: true })),
-              ]
-            : []),
-          ...(node.finally
-            ? [
-                line,
-                group(["finally", line]),
-                indent(group([line, print("finally")], { shouldBreak: true })),
-              ]
-            : []),
+          indent(group([line, printStatements("body")], { shouldBreak: true })),
+        ];
+      case "try_catch":
+        return [
           line,
-          "end",
-        ]);
+          group([
+            "catch",
+            line,
+            node.variable,
+            ...(node.errors_list
+              ? [
+                  group([
+                    line,
+                    ":",
+                    line,
+                    print("errors_list"),
+                  ]),
+                ]
+              : []),
+            line,
+            "do",
+          ]),
+          indent(group([line, printStatements("body")], { shouldBreak: true })),
+        ];
+      case "try_finally":
+        return [
+          line,
+          "finally",
+          indent(group([line, printStatements("body")], { shouldBreak: true })),
+        ];
       case "null":
         return "null";
       default:
@@ -746,15 +666,55 @@ const print = (path, options, print) => {
     }
   };
 
-  return [
-    printComments(node, printValue())[1],
-    ...(path.stack.length == 1 ? ["\n"] : []),
-  ];
+  return [printValue(), ...(path.stack.length == 1 ? [hardline] : [])];
 };
 
 export const printers = {
   liquidsoap: {
     print,
+    canAttachComment: (node) => node.position != null && node.type !== "eof",
+    isBlockComment: () => false,
+    printComment: (path) => {
+      const value = path.getValue().value;
+      const lines = value.split("\n");
+      return lines.length === 1 ? value : join(hardline, lines);
+    },
+    handleComments: {},
+    getCommentChildNodes: (node) => {
+      if (
+        [
+          "program", "def", "fun", "rfun", "simple_fun", "block",
+          "while_body", "for_body", "iterable_for_body",
+          "try_body", "try_finally",
+        ].includes(node.type)
+      )
+        return node.body;
+      if (node.type === "if")
+        return [
+          node.condition,
+          node.then_block,
+          ...node.elsif,
+          ...(node.else_block ? [node.else_block] : []),
+        ];
+      if (node.type === "then_block" || node.type === "else_block")
+        return node.body;
+      if (node.type === "elsif")
+        return [node.condition, ...node.body];
+      if (["while", "for", "iterable_for", "try"].includes(node.type))
+        return node.parts;
+      if (node.type === "while_header") return [node.condition];
+      if (node.type === "for_header") return [node.from, node.to];
+      if (node.type === "iterable_for_header") return [node.iterator];
+      if (node.type === "try_catch")
+        return [
+          ...(node.errors_list ? [node.errors_list] : []),
+          ...node.body,
+        ];
+      if (["if_def", "if_version", "if_encoder"].includes(node.type))
+        return [node.then_block, ...(node.else_block ? [node.else_block] : [])];
+      if (node.type === "ifdef_block") return node.body;
+      return null;
+    },
   },
 };
 
