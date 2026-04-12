@@ -82,6 +82,18 @@ it using the `dev:prepare` npm script. For instance:
 npm run dev:prepare
 ```
 
-If you are working on some changes on the liquidsoap language and want to update the parser file, you need
-to install a pinned version of your changes from the liquidsoap code repository using `opam` and then run
-`dune build` inside this repository. This should rebuild the parser file using your latest changes.
+If you are working on changes to the liquidsoap language and want to rebuild the parser, you can either
+install your changes using `opam pin` and then run `dune build`, or build against your local liquidsoap
+tree directly without pinning by pointing `OCAMLPATH` at the build artifacts:
+
+```shell
+# 1. Build and stage the liquidsoap libraries (no install required)
+cd /path/to/liquidsoap && dune build @install
+
+# 2. Build the prettier parser against those libraries
+cd /path/to/liquidsoap-prettier
+OCAMLPATH=/path/to/liquidsoap/_build/install/default/lib dune build
+```
+
+`OCAMLPATH` makes the OCaml toolchain find the liquidsoap libraries from the local build tree rather than
+the opam switch, so your changes are picked up immediately without any pinning or reinstallation.
