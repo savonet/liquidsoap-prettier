@@ -1,0 +1,32 @@
+name: Check formatting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: true
+
+      - run: pnpm dev:prepare
+
+      - name: Check that stdlib files are formatted
+        run: node src/cli.js --check 'tests/liq/**/*.liq'

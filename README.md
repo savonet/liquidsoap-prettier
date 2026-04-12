@@ -11,18 +11,44 @@ The `liquidsoap-prettier` command-line utility should be installed with this
 package and should be available following the usual node package binary
 conventions.
 
-It works as follows:
+Format one or more files in place:
 
 ```shell
-$ liquidsoap-prettier [-w|--write] path/to/file.liq "path/with/glob/pattern/**/*.liq"
+$ liquidsoap-prettier -w path/to/file.liq "path/with/glob/pattern/**/*.liq"
 ```
 
-You can also simply check the script without formatting it:
+Print formatted output to stdout (single file only):
+
 ```shell
-$ liquidsoap-prettier [-c|--check] path/to/file.liq "path/with/glob/pattern/**/*.liq"
+$ liquidsoap-prettier path/to/file.liq
 ```
 
-The program returns with exit code `0` when the script is already pretty-printed and `2` otherwise.
+Read from stdin and write to stdout:
+
+```shell
+$ cat path/to/file.liq | liquidsoap-prettier --stdin-filepath file.liq
+```
+
+Check whether files are already formatted (useful in CI):
+
+```shell
+$ liquidsoap-prettier -c path/to/file.liq "path/with/glob/pattern/**/*.liq"
+```
+
+Returns exit code `0` when all files are already formatted, `2` otherwise.
+
+Dump the parsed AST as JSON (useful when debugging the printer):
+
+```shell
+$ liquidsoap-prettier --dump-ast path/to/file.liq
+```
+
+Print the version or show all options:
+
+```shell
+$ liquidsoap-prettier --version
+$ liquidsoap-prettier --help
+```
 
 ### Prettier plugin
 
