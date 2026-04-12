@@ -25,5 +25,7 @@ jobs:
           version: 10
           run_install: true
 
+      - run: pnpm dev:prepare
+
       - name: Check that stdlib files are formatted
         run: node src/cli.js --check 'tests/liq/**/*.liq'
