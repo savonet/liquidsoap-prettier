@@ -12,7 +12,7 @@ let parse content =
            (new%js Js.error_constr (Js.string (Buffer.contents buf))))
   in
   Js._JSON##parse
-    (Js.string (Liquidsoap_lang.Json.to_string ~compact:true json))
+    (Js.string (Liquidsoap_lang_data.Json.to_string ~compact:true json))
 
 let _ =
   Js.export "lang"

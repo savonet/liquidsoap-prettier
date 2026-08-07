@@ -13,4 +13,4 @@
  (js_of_ocaml
    (flags --target-env=browser)
    (build_runtime_flags --target-env=browser))
- (libraries js_of_ocaml liquidsoap-js liquidsoap-lang liquidsoap-lang.tooling))
+ (libraries js_of_ocaml liquidsoap-js liquidsoap-lang liquidsoap-lang.data liquidsoap-lang.tooling))
