@@ -11,6 +11,9 @@
  (preprocess
   (pps js_of_ocaml-ppx))
  (js_of_ocaml
-   (flags --target-env=browser)
+   ; The parser has no effect handlers of its own; the ones OCaml 5 links in are
+   ; never performed here. Saying so keeps js_of_ocaml from asking for the cps
+   ; backend, which costs 15% bundle size for support nothing uses.
+   (flags --target-env=browser --effects=disabled)
    (build_runtime_flags --target-env=browser))
  (libraries js_of_ocaml liquidsoap-js liquidsoap-lang liquidsoap-lang.data liquidsoap-lang.tooling))
