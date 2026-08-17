@@ -217,6 +217,7 @@ const print = (path, options, print) => {
       case "invoke":
         return group([print("value"), indent([softline, ".", node.method])]);
       case "source_annotation":
+        if (node.abstract) return ["(", "_", ")"];
         return node.value.length === 0
           ? []
           : group([
