@@ -30,6 +30,10 @@ export const parsers = {
   },
 };
 
+// Liquidsoap's parser used to read `null.m` and `null(x)` as the module
+// `_null`; printing it back keeps older parsers working.
+const sourceName = (name) => (name === "_null" ? "null" : name);
+
 const printStmts = (stmts, printed) => {
   if (!stmts || stmts.length === 0) return "";
   const result = [];
@@ -327,7 +331,7 @@ const print = (path, options, print) => {
       case "not":
         return group(["not", " ", print("value")]);
       case "var":
-        return node.value === "_null" ? "null" : node.value;
+        return sourceName(node.value);
       case "string":
         return printString(node.value);
       case "raw_string":
@@ -387,8 +391,12 @@ const print = (path, options, print) => {
           softline,
           "}",
         ]);
-      case "pvar":
-        return group([indent(join([softline, "."], node.value))]);
+      case "pvar": {
+        const [head, ...rest] = node.value;
+        return group([
+          indent(join([softline, "."], [sourceName(head), ...rest])),
+        ]);
+      }
       case "plist":
         return group([
           "[",
