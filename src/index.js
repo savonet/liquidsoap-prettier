@@ -142,7 +142,7 @@ const print = (path, options, print) => {
       case "nullable":
         return [print("value"), "?"];
       case "typeof":
-        return group(["typeof", " ", print("value")]);
+        return group(["%typeof", "(", print("value"), ")"]);
       case "fun_arg":
         return [
           ...(node.label ? ["~", node.label] : []),
